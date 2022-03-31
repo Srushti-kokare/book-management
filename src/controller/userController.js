@@ -45,11 +45,7 @@ if (phoneCheck == false)
  return res.status(400).send({ status: false, msg: "please enter a valid phone number" })
 if (!isValid(data.phone))
  return res.status(400).send({ status: false, msg: "phone is required" })
- 
-//  let alreadyExist = await UserModel.findOne({ phone: data.phone })
-// if (alreadyExist) {
-// return res.status(400).send({ status: false, msg: "phone already exist" })
-// }
+
 
 if (isValid(data.email))
 if (!(/^\w+([\.-]?\w+)@\w+([\.-]?\w+)(\.\w{2,3})+$/.test(data.email)))
@@ -108,7 +104,7 @@ let token = jwt.sign(
  userId: user._id,
 email: user._email
 
-}, "Group16", { expiresIn: "5hr" }
+}, "group16", { expiresIn: "5hr" }
 
 );
 res.status(200).setHeader("x-api-key", token);
