@@ -1,126 +1,144 @@
-const UserModel = require("../model/userModel")
+
+
+
+
+
+
+
 const jwt = require("jsonwebtoken")
+const userModel = require("../model/userModel")
+
 
 const isValid = function (value) {
-    if (typeof value == undefined || value == null || value.length == 0) return false
-    if (typeof value === 'string' && value.trim().length === 0) return false
-   return true
-
-}
-const isValidRequestBody = function (requestBody) {
-return Object.keys(requestBody).length > 0
+    if (typeof (value) === undefined || typeof (value) === null) { return false }
+    if (typeof (value) === "string" && (value).trim().length > 0) { return true }
 }
 
-
-const createUser = async function (req, res) {
-try {
-let data = req.body
-const { title, name, phone, email, password, address } = data
-
-if (!isValidRequestBody(data))
-return res.status(400).send({ status: false, msg: "Please Enter some data" })
-if (!isValid(data.title)) {
-return res.status(400).send({ status: false, msg: "title is Required" })
-}
-        
-if (!isValid(data.name)) {
-return res.status(400).send({ status: false, msg: "name is Required" })
-}
-if (isValid(data.phone))
-if (!(/^([+]\d{2})?\d{10}$/.test(data.phone)))
-return res.status(400).send({ status: false, msg: "Please Enter  a Valid Phone Number" })
-
-function checkIndianNumber(b)   
-{  var a = /^[6-9]\d{9}$/gi;  
-if (a.test(b))   
-{  return true;  
-    }   
-else  
- {  
-return false; 
-}  
-};
-let phoneCheck =checkIndianNumber(phone);
-if (phoneCheck == false)
- return res.status(400).send({ status: false, msg: "please enter a valid phone number" })
-if (!isValid(data.phone))
- return res.status(400).send({ status: false, msg: "phone is required" })
-
-
-if (isValid(data.email))
-if (!(/^\w+([\.-]?\w+)@\w+([\.-]?\w+)(\.\w{2,3})+$/.test(data.email)))
- return res.status(400).send({ status: false, msg: "is not a valid email" })
-if (!isValid(data.email))
-return res.status(400).send({ status: false, msg: "email is required" })
-
-        
-let alreadyExistEmail = await UserModel.findOne({ email: data.email })
-if (alreadyExistEmail) {
- return res.status(400).send({ status: false, msg: "email already exist" })
-}
-
-if (!isValid(data.password)) {
-return res.status(400).send({ status: false, msg: "Password is Required" })
-}
-if (!(/^[a-zA-Z0-9!@#$%^&*]{8,15}$/.test(data.password))) {
-return res.status(400).send({ status: false, msg: "please provide valid password with one uppercase letter ,one lowercase, one character and one number " })
- }
-if (isValid(data.address.pincode))
-
-if (!(/^([+]\d{2})?\d{6}$/.test(data.address.pincode)))
- return res.status(400).send({ status: false, msg: "Please Enter  a Valid pincode Number" })
-
-
-let savedData = await UserModel.create(data)
-res.status(201).send({ msg: savedData })
+const isValidTitle = (title) => {
+    return ['Mr', 'Mrs', 'Miss'].indexOf(title) !== -1
 
 }
- catch (err) {
- res.status(500).send({ status: false, msg: err.message })
+
+const register = async (req, res) => {
+
+    try {
+
+        let data = req.body
+        if (!Object.keys(data).length > 0) {
+            return res.status(400).send({ status: false, message: "Please enter some data" })
+        }
+
+        const { title, name, phone, email, password } = data
+
+        if (!isValid(title)) {
+            return res.status(400).send({ status: false, message: "Title is required" })
+        }
+
+        if (!isValidTitle(title)) {
+            return res.status(400).send({ status: false, message: "Title should be either from ['Mr', 'Mrs', 'Miss']" })
+        }
+
+        if (!isValid(name)) {
+            return res.status(400).send({ status: false, message: "Name is required" })
+        }
+
+        if (!isValid(phone)) {
+            return res.status(400).send({ status: false, message: "Contact number is required" })
+        }
+
+        if (!isValid(email)) {
+            return res.status(400).send({ status: false, message: "emailId is required" })
+        }
+
+        if (!isValid(password)) {
+            return res.status(400).send({ status: false, message: "Password is required" })
+        }
+
+        let Email = email
+        let validateEmail = function (Email) {
+            return /^\w+([\.-]?\w+)@\w+([\.-]?\w+)(\.\w{2,3})+$/.test(Email);
+        }
+        if (!validateEmail(Email)) {
+            return res.status(400).send({ status: false, message: "Please enter a valid email" })
+        }
+
+        const Mobile = phone
+        const validateMobile = function (Mobile) {
+            return /^(\+91[\-\s]?)?[0]?(91)?[789]\d{9}$/.test(Mobile)
+        }
+        if (!validateMobile(Mobile)) {
+            return res.status(400).send({ status: false, message: "Please enter valid mobile" })
+        }
+
+        const Password = password
+        const validatePassword = function (Password) {
+            return /^.{8,15}$/.test(Password)
+        }
+        if (!validatePassword(Password)) {
+            return res.status(400).send({ status: false, message: "Password length must be between 8 to 15 characters" })
+        }
+
+        const emailAlreadyUsed = await userModel.findOne({ email })
+
+        if (emailAlreadyUsed) return res.status(400).send({ status: false, message: "email already registered" })
+
+
+        const mobileAlreadyUsed = await userModel.findOne({ phone })
+
+        if (mobileAlreadyUsed) return res.status(400).send({ status: false, message: "mobile already registered" })
+
+        const createdUser = await userModel.create(data)
+
+        res.status(201).send({ status: true, data: createdUser })
+
+    }
+    catch (error) {
+        res.status(500).send({ status: false, message: error.message })
+    }
 }
+
+const login = async (req, res) => {
+
+    try {
+        const { email, password } = req.body
+
+        if (!Object.keys(req.body).length > 0) {
+            return res.status(400).send({ status: false, message: "Please enter some data" })
+        }
+
+        if (!isValid(email)) {
+            return res.status(400).send({ status: false, message: "emailId is required" })
+        }
+
+        let Email = email
+        let validateEmail = function (Email) {
+            return /^\w+([\.-]?\w+)@\w+([\.-]?\w+)(\.\w{2,3})+$/.test(Email);
+        }
+        if (!validateEmail(Email)) {
+            return res.status(400).send({ status: false, message: "Please enter a valid email" })
+        }
+
+        if (!isValid(password)) {
+            return res.status(400).send({ status: false, message: "Password is required" })
+        }
+
+        const user = await userModel.findOne({ email: email, password: password })
+        if (!user) {
+            return res.status(401).send({ status: false, message: "incorrect credentials" })
+        }
+
+        const token = jwt.sign({
+            id: user._id,
+            group: "16",
+            iat: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + 1 * 60 * 60
+
+        }, "projectthreebook")
+        return res.status(200).send({ status: true, message: "success", data: token })
+    } catch (error) {
+        return res.status(500).send({ status: false, message: error.message })
+    }
 }
 
-const loginUser = async function (req, res) {
-try {
-let body = req.body
-if (Object.keys(body) != 0) {
-let userName = req.body.email;
-let passwords = req.body.password;
-if (!(/^\w+([\.-]?\w+)@\w+([\. -]?\w+)(\.\w{2,3})+$/.test(userName))) { return res.status(400).send({ status: false, msg: "Please provide a valid email" }) }
-if (!(/^[a-zA-Z0-9!@#$%^&*]{8,15}$/.test(passwords))) {
-return res.status(400).send({ status: false, msg: "please provide valid password with one uppercase letter ,one lowercase, one character and one number " })
-}
-let user = await UserModel.findOne({ email: userName, password: passwords });
 
-if (!user) {
-return res.status(400).send({
-status: false,
- ERROR: "username or the password is not correct",
-});
-}
-
-let token = jwt.sign(
-{
- userId: user._id,
-email: user._email
-
-}, "group16", { expiresIn: "5hr" }
-
-);
-res.status(200).setHeader("x-api-key", token);
-return res.status(201).send({ status: "loggedin", token: token });
-}
-
-else { return res.status(400).send({ ERROR: "Bad Request" }) }
-
-}
-catch (err) {
-
-return res.status(500).send({ ERROR: err.message })
-}
-
-};
-
-
-module.exports.createUser = createUser;
-module.exports.loginUser = loginUser;
+module.exports = { login, register }
